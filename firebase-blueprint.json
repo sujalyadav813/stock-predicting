@@ -1,0 +1,132 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Public and account profile for authenticated users",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Unique Firebase Authentication UID",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 128
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Avatar image URL",
+          "maxLength": 512
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Account creation ISO timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": ["userId", "email"]
+    },
+    "UserPortfolio": {
+      "title": "UserPortfolio",
+      "description": "User stock watchlist and paper trading positions",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "Owner UID",
+          "maxLength": 128
+        },
+        "watchlist": {
+          "type": "array",
+          "description": "Array of stock ticker symbols"
+        },
+        "cashBalance": {
+          "type": "number",
+          "description": "Virtual portfolio cash balance"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last updated timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": ["userId"]
+    },
+    "StockPrediction": {
+      "title": "StockPrediction",
+      "description": "Saved quantitative stock price prediction and model output",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "UID of user who generated this prediction",
+          "maxLength": 128
+        },
+        "ticker": {
+          "type": "string",
+          "description": "Stock symbol (e.g. AAPL, NVDA, TSLA)",
+          "maxLength": 16
+        },
+        "modelType": {
+          "type": "string",
+          "description": "Prediction model archetype",
+          "maxLength": 64
+        },
+        "timeframe": {
+          "type": "string",
+          "description": "Prediction horizon (1D, 7D, 30D, 90D)",
+          "maxLength": 16
+        },
+        "currentPrice": {
+          "type": "number",
+          "description": "Base asset price at inference time"
+        },
+        "predictedPrice": {
+          "type": "number",
+          "description": "Target projected price point"
+        },
+        "directionalSignal": {
+          "type": "string",
+          "description": "Quant recommendation signal",
+          "maxLength": 32
+        },
+        "confidenceScore": {
+          "type": "number",
+          "description": "Model confidence percentage 0-100"
+        },
+        "summary": {
+          "type": "string",
+          "description": "AI quantitative executive rationale",
+          "maxLength": 4096
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp ISO",
+          "maxLength": 64
+        }
+      },
+      "required": ["userId", "ticker", "predictedPrice"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document indexed by auth UID"
+    },
+    "/portfolios/{userId}": {
+      "schema": "UserPortfolio",
+      "description": "User watchlist and portfolio document indexed by auth UID"
+    },
+    "/predictions/{predictionId}": {
+      "schema": "StockPrediction",
+      "description": "Historical saved predictions with userId ownership"
+    }
+  }
+}

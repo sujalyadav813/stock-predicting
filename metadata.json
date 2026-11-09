@@ -1,0 +1,6 @@
+{
+  "name": "QuantPulse - AI Stock Price Prediction & Trading Terminal",
+  "description": "Advanced algorithmic stock price forecasting terminal featuring multi-model predictive engine (Monte Carlo, ARIMA/LSTM hybrid, Gemini quantitative market reasoning), real-time technical indicators, Google authentication, and portfolio tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

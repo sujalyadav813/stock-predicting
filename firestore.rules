@@ -1,0 +1,90 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net (Default-Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Security Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Validation Blueprint for UserProfile
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.email is string && data.email.size() <= 256 &&
+             (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128)) &&
+             (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 512)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // Validation Blueprint for UserPortfolio
+    function isValidUserPortfolio(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             (!('cashBalance' in data) || data.cashBalance is number) &&
+             (!('watchlist' in data) || (data.watchlist is list && data.watchlist.size() <= 50)) &&
+             (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    // Validation Blueprint for StockPrediction
+    function isValidStockPrediction(data) {
+      return data.userId is string && data.userId.size() <= 128 &&
+             data.userId == request.auth.uid &&
+             data.ticker is string && data.ticker.size() <= 16 &&
+             data.predictedPrice is number &&
+             (!('currentPrice' in data) || data.currentPrice is number) &&
+             (!('modelType' in data) || (data.modelType is string && data.modelType.size() <= 64)) &&
+             (!('timeframe' in data) || (data.timeframe is string && data.timeframe.size() <= 16)) &&
+             (!('directionalSignal' in data) || (data.directionalSignal is string && data.directionalSignal.size() <= 32)) &&
+             (!('confidenceScore' in data) || data.confidenceScore is number) &&
+             (!('summary' in data) || (data.summary is string && data.summary.size() <= 4096)) &&
+             (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
+    }
+
+    // /users/{userId}
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserProfile(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isOwner(userId);
+    }
+
+    // /portfolios/{userId}
+    match /portfolios/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUserPortfolio(incoming());
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUserPortfolio(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isOwner(userId);
+    }
+
+    // /predictions/{predictionId}
+    match /predictions/{predictionId} {
+      allow get: if isSignedIn() && isValidId(predictionId) && resource.data.userId == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(predictionId) && isValidStockPrediction(incoming());
+      allow update: if isSignedIn() && isValidId(predictionId) && resource.data.userId == request.auth.uid && isValidStockPrediction(incoming()) && incoming().userId == existing().userId;
+      allow delete: if isSignedIn() && isValidId(predictionId) && resource.data.userId == request.auth.uid;
+    }
+  }
+}
